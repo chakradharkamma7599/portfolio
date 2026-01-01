@@ -66,6 +66,9 @@ sections.forEach(section => {
     observer.observe(section);
 });
 
+// Initialize EmailJS with your public key
+emailjs.init('AANY7FEMLSePJgF-y');
+
 // Form submission
 const contactForm = document.getElementById('contactForm');
 if (contactForm) {
@@ -78,12 +81,58 @@ if (contactForm) {
         const email = formData.get('email');
         const message = formData.get('message');
         
-        // Here you would typically send the data to a server
-        // For now, we'll just show an alert
-        alert('Thank you for your message! I will get back to you soon.');
+        // Basic validation
+        if (!name || !email || !message) {
+            alert('Please fill in all fields.');
+            return;
+        }
         
-        // Reset form
-        contactForm.reset();
+        // Email validation regex
+        const emailRegex = /^[\w\._%+-]+@[\w\.-]+\.[A-Za-z]{2,}$/;
+        if (!emailRegex.test(email)) {
+            alert('Please enter a valid email address.');
+            return;
+        }
+        
+        // Show loading message
+        const submitBtn = contactForm.querySelector('button[type="submit"]');
+        const originalBtnText = submitBtn.textContent;
+        submitBtn.textContent = 'Sending...';
+        submitBtn.disabled = true;
+        
+        // Prepare email parameters
+        const emailParams = {
+            from_name: name,
+            from_email: email,
+            message: message
+        };
+        
+        // Send email using EmailJS
+        emailjs.send('service_xzsa51o', 'template_r3gudmd', emailParams)
+            .then(function(response) {
+                console.log('SUCCESS!', response.status, response.text);
+                alert('Thank you for your message! I will get back to you soon.');
+                contactForm.reset();
+            }, function(error) {
+                console.log('FAILED...', error);
+                // Fallback to mailto if EmailJS fails
+                const subject = `Portfolio Contact: Message from ${name}`;
+                const emailBody = `Hello,
+
+I am ${name} and my contact email is ${email}.
+
+${message}
+
+Thank you!`;
+                const mailtoLink = `mailto:chakradharkamma7599@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
+                window.location.href = mailtoLink;
+                alert('Email service temporarily unavailable. Your default email client should open to send the message.');
+            })
+            .finally(() => {
+                // Reset button state
+                submitBtn.textContent = originalBtnText;
+                submitBtn.disabled = false;
+            });
     });
 }
 
